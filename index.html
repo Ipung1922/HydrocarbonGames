@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World of Chemistry</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e2e8f0' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        .btn-chemistry {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .btn-chemistry:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-1 {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+        
+        .btn-2 {
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+        }
+        
+        .btn-3 {
+            background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);
+        }
+        
+        .title-text {
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .molecule-decoration {
+            position: absolute;
+            opacity: 0.1;
+            z-index: -1;
+        }
+        
+        .molecule-1 {
+            top: 10%;
+            left: 5%;
+            width: 100px;
+            height: 100px;
+        }
+        
+        .molecule-2 {
+            bottom: 10%;
+            right: 5%;
+            width: 150px;
+            height: 150px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Molecule Decorations -->
+    <svg class="molecule-decoration molecule-1" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="40" stroke="#3b82f6" stroke-width="2" fill="none"/>
+        <circle cx="30" cy="30" r="8" fill="#3b82f6"/>
+        <circle cx="70" cy="30" r="8" fill="#3b82f6"/>
+        <circle cx="50" cy="70" r="8" fill="#3b82f6"/>
+    </svg>
+    
+    <svg class="molecule-decoration molecule-2" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="8" fill="#f59e0b"/>
+        <circle cx="20" cy="50" r="8" fill="#f59e0b"/>
+        <circle cx="80" cy="50" r="8" fill="#f59e0b"/>
+        <circle cx="50" cy="20" r="8" fill="#f59e0b"/>
+        <circle cx="50" cy="80" r="8" fill="#f59e0b"/>
+        <line x1="50" y1="50" x2="20" y2="50" stroke="#f59e0b" stroke-width="2"/>
+        <line x1="50" y1="50" x2="80" y2="50" stroke="#f59e0b" stroke-width="2"/>
+        <line x1="50" y1="50" x2="50" y2="20" stroke="#f59e0b" stroke-width="2"/>
+        <line x1="50" y1="50" x2="50" y2="80" stroke="#f59e0b" stroke-width="2"/>
+    </svg>
+
+    <header class="py-12 px-4 text-center">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4 title-text">Welcome to the World of Chemistry!</h1>
+            <p class="text-xl text-gray-600">Choose a menu to start learning or playing:</p>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center px-4 py-8">
+        <div class="max-w-2xl w-full space-y-6">
+            <a href="materi.html" class="block">
+                <button class="btn-chemistry btn-1 w-full py-6 px-6 rounded-xl text-white text-lg md:text-xl font-semibold flex items-center justify-between">
+                    <span>Hydrocarbon Material: Alkanes, Alkenes, Alkynes</span>
+                    <i class="fas fa-flask text-2xl"></i>
+                </button>
+            </a>
+            
+            <a href="Hidrokarbon.html" class="block">
+                <button class="btn-chemistry btn-2 w-full py-6 px-6 rounded-xl text-white text-lg md:text-xl font-semibold flex items-center justify-between">
+                    <span>Hydrocarbon Sorter</span>
+                    <i class="fas fa-atom text-2xl"></i>
+                </button>
+            </a>
+            
+            <a href="HydrocarbonDash.html" class="block">
+                <button class="btn-chemistry btn-3 w-full py-6 px-6 rounded-xl text-white text-lg md:text-xl font-semibold flex items-center justify-between">
+                    <span>Chemistry Runner</span>
+                    <i class="fas fa-running text-2xl"></i>
+                </button>
+            </a>
+        </div>
+    </main>
+
+    <footer class="py-6 text-center text-gray-500 text-sm">
+        <p>© 2023 World of Chemistry | Explore the fascinating world of molecules</p>
+    </footer>
+
+    <script>
+        // Add a simple animation to buttons on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const buttons = document.querySelectorAll('.btn-chemistry');
+            buttons.forEach((btn, index) => {
+                setTimeout(() => {
+                    btn.classList.add('opacity-100');
+                }, 200 * index);
+            });
+        });
+    </script>
+</body>
+</html>

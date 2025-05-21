@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Runner: Hydrocarbon Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f0f23;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            color: white;
+        }
+
+        .game-title {
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 10px #00f7ff, 0 0 20px #0084ff;
+        }
+
+        .player {
+            background: radial-gradient(circle, #00f7ff 0%, #0084ff 70%, transparent 90%);
+            box-shadow: 0 0 15px #00f7ff, 0 0 30px #0084ff;
+        }
+
+        .alkane {
+            background: radial-gradient(circle, #00ff88 0%, #00aa55 70%, transparent 90%);
+            box-shadow: 0 0 10px #00ff88, 0 0 20px #00aa55;
+        }
+
+        .alkene {
+            background: radial-gradient(circle, #ffcc00 0%, #ff9900 70%, transparent 90%);
+            box-shadow: 0 0 10px #ffcc00, 0 0 20px #ff9900;
+        }
+
+        .alkyne {
+            background: radial-gradient(circle, #ff00aa 0%, #ff0066 70%, transparent 90%);
+            box-shadow: 0 0 10px #ff00aa, 0 0 20px #ff0066;
+        }
+
+        .wrong-compound {
+            background: radial-gradient(circle, #ff0000 0%, #990000 70%, transparent 90%);
+            box-shadow: 0 0 10px #ff0000, 0 0 20px #990000;
+        }
+
+        .powerup {
+            background: radial-gradient(circle, #00ffff 0%, #0088ff 70%, transparent 90%);
+            box-shadow: 0 0 10px #00ffff, 0 0 20px #0088ff;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 30, 0.9);
+            border: 1px solid #00f7ff;
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 100;
+            max-width: 200px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background-color: #050510;
+            border: 2px solid #00f7ff;
+            box-shadow: 0 0 20px #0084ff;
+        }
+
+        .lane-marker {
+            position: absolute;
+            height: 100%;
+            width: 2px;
+            background: rgba(0, 247, 255, 0.2);
+        }
+
+        .level-button {
+            transition: all 0.3s;
+        }
+
+        .level-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .alkane-level {
+            background: linear-gradient(to bottom right, #00aa55, #005522);
+            color: white;
+        }
+
+        .alkene-level {
+            background: linear-gradient(to bottom right, #ff9900, #aa5500);
+            color: white;
+        }
+
+        .alkyne-level {
+            background: linear-gradient(to bottom right, #ff0066, #aa0044);
+            color: white;
+        }
+
+        .level-indicator {
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 5px currentColor;
+        }
+
+        .alkane-indicator {
+            color: #00ff88;
+        }
+
+        .alkene-indicator {
+            color: #ffcc00;
+        }
+
+        .alkyne-indicator {
+            color: #ff00aa;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col items-center justify-center min-h-screen">
+    <div id="levelScreen"
+        class="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-80 z-50">
+        <h1 class="game-title text-5xl md:text-6xl font-bold mb-8">Chemistry Runner</h1>
+        <h2 class="text-2xl md:text-3xl font-bold mb-12 text-blue-300">Hydrocarbon Challenge</h2>
+
+        <div class="max-w-md text-center mb-12 px-4">
+            <p class="mb-4">Choose your level and collect the correct hydrocarbon compounds while avoiding others!</p>
+            <p class="text-sm text-gray-400">Learn about organic chemistry as you play!</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 w-full max-w-3xl px-4">
+            <button id="alkaneLevel" class="level-button alkane-level px-8 py-6 rounded-xl text-xl font-bold">
+                <div class="text-3xl mb-2">Level 1</div>
+                <div class="text-2xl">Alkane</div>
+                <div class="text-sm mt-2 opacity-80">Collect CH₄, C₂H₆, etc.</div>
+            </button>
+
+            <button id="alkeneLevel" class="level-button alkene-level px-8 py-6 rounded-xl text-xl font-bold">
+                <div class="text-3xl mb-2">Level 2</div>
+                <div class="text-2xl">Alkene</div>
+                <div class="text-sm mt-2 opacity-80">Collect C₂H₄, C₃H₆, etc.</div>
+            </button>
+
+            <button id="alkyneLevel" class="level-button alkyne-level px-8 py-6 rounded-xl text-xl font-bold">
+                <div class="text-3xl mb-2">Level 3</div>
+                <div class="text-2xl">Alkyne</div>
+                <div class="text-sm mt-2 opacity-80">Collect C₂H₂, C₃H₄, etc.</div>
+            </button>
+        </div>
+
+        <div class="text-sm text-gray-400">
+            <p>Controls: Arrow Keys or WASD to move between lanes</p>
+        </div>
+    </div>
+
+    <div id="gameHeader" class="absolute top-0 left-0 w-full p-4 flex justify-between items-center hidden">
+        <div class="flex items-center space-x-4">
+            <h1 class="game-title text-xl md:text-2xl font-bold">Chemistry Runner</h1>
+            <div id="levelIndicator" class="level-indicator text-lg">
+                <!-- Level will be shown here -->
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="text-xl">
+                Score: <span id="score" class="font-bold">0</span>
+            </div>
+            <div class="text-xl">
+                Time: <span id="time" class="font-bold">0</span>s
+            </div>
+        </div>
+    </div>
+
+    <div class="relative w-full max-w-3xl hidden" id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        <div id="lane1" class="lane-marker" style="left: 33.33%"></div>
+        <div id="lane2" class="lane-marker" style="left: 66.66%"></div>
+    </div>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <div id="gameOverScreen"
+        class="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-80 z-50 hidden">
+        <h1 class="game-title text-5xl font-bold mb-8 text-red-400">Game Over</h1>
+
+        <div class="bg-gray-900 bg-opacity-70 rounded-lg p-6 mb-8 w-full max-w-md">
+            <div class="flex justify-between mb-4">
+                <span class="text-xl">Final Score:</span>
+                <span id="finalScore" class="text-2xl font-bold">0</span>
+            </div>
+            <div class="flex justify-between mb-4">
+                <span class="text-xl">Time Survived:</span>
+                <span id="finalTime" class="text-2xl font-bold">0s</span>
+            </div>
+            <div class="flex justify-between mb-6">
+                <span class="text-xl">Compounds Collected:</span>
+                <span id="compoundsCollected" class="text-2xl font-bold">0</span>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-lg font-bold mb-2 text-blue-300">Compounds Encountered</h3>
+                <div id="compoundsList" class="text-sm max-h-32 overflow-y-auto bg-gray-800 p-2 rounded">
+                    <!-- Compounds will be added here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="flex space-x-4">
+            <button id="restartButton"
+                class="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-full font-bold transition-all">
+                Play Again
+            </button>
+            <button id="menuButton"
+                class="px-6 py-2 bg-gray-600 hover:bg-gray-500 rounded-full font-bold transition-all">
+                Main Menu
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game constants
+        const LANE_COUNT = 3;
+        const LANE_WIDTH = 800 / LANE_COUNT;
+        const PLAYER_SIZE = 60;
+        const COMPOUND_SIZE = 50;
+        const POWERUP_SIZE = 50;
+        const GAME_SPEED_START = 0.3;
+        const GAME_SPEED_INCREMENT = 0.001;
+
+        // Game variables
+        let canvas, ctx;
+        let gameRunning = false;
+        let gameSpeed = GAME_SPEED_START;
+        let score = 0;
+        let time = 0;
+        let currentLevel = null;
+        let player = {
+            x: LANE_WIDTH * 1 + LANE_WIDTH / 2,
+            y: 400,
+            lane: 1,
+            immune: false,
+            doublePoints: false
+        };
+        let compounds = [];
+        let powerups = [];
+        let lastCompoundTime = 0;
+        let lastPowerupTime = 0;
+        let gameTime = 0;
+        let animationId;
+        let compoundsCollected = 0;
+        let compoundsEncountered = [];
+
+        // Compound types for each level
+        const compoundTypes = {
+            alkane: {
+                correct: [
+                    { name: "CH₄", formula: "Methane", points: 100 },
+                    { name: "C₂H₆", formula: "Ethane", points: 100 },
+                    { name: "C₃H₈", formula: "Propane", points: 100 },
+                    { name: "C₄H₁₀", formula: "Butane", points: 100 },
+                    { name: "C₅H₁₂", formula: "Pentane", points: 100 },
+                    { name: "C₆H₁₄", formula: "Hexane", points: 100 },
+                    { name: "C₇H₁₆", formula: "Heptane", points: 100 },
+                    { name: "C₈H₁₈", formula: "Octane", points: 100 },
+                    { name: "C₉H₂₀", formula: "Nonane", points: 100 },
+                    { name: "C₁₀H₂₂", formula: "Decane", points: 100 }
+
+                ],
+                wrong: [
+                    { name: "C₂H₄", formula: "Ethene", points: -100 },
+                    { name: "C₃H₆", formula: "Propene", points: -100 },
+                    { name: "C₄H₈", formula: "Butene", points: -100 },
+                    { name: "C₅H₁₀", formula: "Pentene", points: -100 },
+                    { name: "C₆H₁₂", formula: "Hexene", points: -100 },
+                    { name: "C₇H₁₄", formula: "Heptene", points: -100 },
+                    { name: "C₈H₁₆", formula: "Octene", points: -100 },
+                    { name: "C₉H₁₈", formula: "Nonene", points: -100 },
+                    { name: "C₁₀H₂₀", formula: "Decene", points: -100 },
+                    { name: "C₂H₂", formula: "Ethyne", points: -100 },
+                    { name: "C₃H₄", formula: "Propyne", points: -100 },
+                    { name: "C₄H₆", formula: "Butyne", points: -100 },
+                    { name: "C₅H₈", formula: "Pentyne", points: -100 },
+                    { name: "C₆H₁₀", formula: "Hexyne", points: -100 },
+                    { name: "C₇H₁₂", formula: "Heptyne", points: -100 },
+                    { name: "C₈H₁₄", formula: "Octyne", points: -100 },
+                    { name: "C₉H₁₆", formula: "Nonyne", points: -100 },
+                    { name: "C₁₀H₁₈", formula: "Decyne", points: -100 }
+                ]
+            },
+            alkene: {
+                correct: [
+                    { name: "C₂H₄", formula: "Ethene", points: 100 },
+                    { name: "C₃H₆", formula: "Propene", points: 100 },
+                    { name: "C₄H₈", formula: "Butene", points: 100 },
+                    { name: "C₅H₁₀", formula: "Pentene", points: 100 },
+                    { name: "C₆H₁₂", formula: "Hexene", points: 100 },
+                    { name: "C₇H₁₄", formula: "Heptene", points: 100 },
+                    { name: "C₈H₁₆", formula: "Octene", points: 100 },
+                    { name: "C₉H₁₈", formula: "Nonene", points: 100 },
+                    { name: "C₁₀H₂₀", formula: "Decene", points: 100 }
+
+                ],
+                wrong: [
+                    { name: "C₂H₂", formula: "Ethyne", points: -100 },
+                    { name: "C₃H₄", formula: "Propyne", points: -100 },
+                    { name: "C₄H₆", formula: "Butyne", points: -100 },
+                    { name: "C₅H₈", formula: "Pentyne", points: -100 },
+                    { name: "C₆H₁₀", formula: "Hexyne", points: -100 },
+                    { name: "C₇H₁₂", formula: "Heptyne", points: -100 },
+                    { name: "C₈H₁₄", formula: "Octyne", points: -100 },
+                    { name: "C₉H₁₆", formula: "Nonyne", points: -100 },
+                    { name: "C₁₀H₁₈", formula: "Decyne", points: -100 },
+                    { name: "CH₄", formula: "Methane", points: -100 },
+                    { name: "C₂H₆", formula: "Ethane", points: -100 },
+                    { name: "C₃H₈", formula: "Propane", points: -100 },
+                    { name: "C₄H₁₀", formula: "Butane", points: -100 },
+                    { name: "C₅H₁₂", formula: "Pentane", points: -100 },
+                    { name: "C₆H₁₄", formula: "Hexane", points: -100 },
+                    { name: "C₇H₁₆", formula: "Heptane", points: -100 },
+                    { name: "C₈H₁₈", formula: "Octane", points: -100 },
+                    { name: "C₉H₂₀", formula: "Nonane", points: -100 },
+                    { name: "C₁₀H₂₂", formula: "Decane", points: -100 }
+
+                ]
+            },
+            alkyne: {
+                correct: [
+                    { name: "C₂H₂", formula: "Ethyne", points: 100 },
+                    { name: "C₃H₄", formula: "Propyne", points: 100 },
+                    { name: "C₄H₆", formula: "Butyne", points: 100 },
+                    { name: "C₅H₈", formula: "Pentyne", points: 100 },
+                    { name: "C₆H₁₀", formula: "Hexyne", points: 100 },
+                    { name: "C₇H₁₂", formula: "Heptyne", points: 100 },
+                    { name: "C₈H₁₄", formula: "Octyne", points: 100 },
+                    { name: "C₉H₁₆", formula: "Nonyne", points: 100 },
+                    { name: "C₁₀H₁₈", formula: "Decyne", points: 100 }
+
+                ],
+                wrong: [
+                    { name: "CH₄", formula: "Methane", points: -100 },
+                    { name: "C₂H₆", formula: "Ethane", points: -100 },
+                    { name: "C₃H₈", formula: "Propane", points: -100 },
+                    { name: "C₄H₁₀", formula: "Butane", points: -100 },
+                    { name: "C₅H₁₂", formula: "Pentane", points: -100 },
+                    { name: "C₆H₁₄", formula: "Hexane", points: -100 },
+                    { name: "C₇H₁₆", formula: "Heptane", points: -100 },
+                    { name: "C₈H₁₈", formula: "Octane", points: -100 },
+                    { name: "C₉H₂₀", formula: "Nonane", points: -100 },
+                    { name: "C₁₀H₂₂", formula: "Decane", points: -100 },
+                    { name: "C₂H₄", formula: "Ethene", points: -100 },
+                    { name: "C₃H₆", formula: "Propene", points: -100 },
+                    { name: "C₄H₈", formula: "Butene", points: -100 },
+                    { name: "C₅H₁₀", formula: "Pentene", points: -100 },
+                    { name: "C₆H₁₂", formula: "Hexene", points: -100 },
+                    { name: "C₇H₁₄", formula: "Heptene", points: -100 },
+                    { name: "C₈H₁₆", formula: "Octene", points: -100 },
+                    { name: "C₉H₁₈", formula: "Nonene", points: -100 },
+                    { name: "C₁₀H₂₀", formula: "Decene", points: -100 }
+                ]
+            }
+        };
+
+        // Powerup types
+        const powerupTypes = [
+            {
+                name: "Catalyst",
+                effect: "Slows time for 5 seconds",
+                duration: 5000
+            },
+            {
+                name: "Shield",
+                effect: "Immunity for 5 seconds",
+                duration: 5000
+            },
+            {
+                name: "Double Points",
+                effect: "Double points for 10 seconds",
+                duration: 10000
+            }
+        ];
+
+        // Initialize game
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+
+            // Event listeners
+            document.addEventListener('keydown', handleKeyPress);
+            document.getElementById('alkaneLevel').addEventListener('click', () => startGame('alkane'));
+            document.getElementById('alkeneLevel').addEventListener('click', () => startGame('alkene'));
+            document.getElementById('alkyneLevel').addEventListener('click', () => startGame('alkyne'));
+            document.getElementById('restartButton').addEventListener('click', () => startGame(currentLevel));
+            document.getElementById('menuButton').addEventListener('click', showMenu);
+
+            // For mobile touch controls
+            canvas.addEventListener('touchstart', handleTouch);
+
+            // Set canvas size based on window
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        function resizeCanvas() {
+            const maxWidth = Math.min(window.innerWidth - 40, 800);
+            const aspectRatio = 500 / 800;
+            canvas.style.width = maxWidth + 'px';
+            canvas.style.height = (maxWidth * aspectRatio) + 'px';
+        }
+
+        function startGame(level) {
+            currentLevel = level;
+
+            // Reset game state
+            gameRunning = true;
+            score = 0;
+            time = 0;
+            gameTime = 0;
+            gameSpeed = GAME_SPEED_START;
+            compoundsCollected = 0;
+            compoundsEncountered = [];
+            player = {
+                x: LANE_WIDTH * 1 + LANE_WIDTH / 2,
+                y: 400,
+                lane: 1,
+                immune: false,
+                doublePoints: false
+            };
+            compounds = [];
+            powerups = [];
+
+            // Hide screens and show game
+            document.getElementById('levelScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('gameHeader').classList.remove('hidden');
+            document.getElementById('gameContainer').classList.remove('hidden');
+
+            // Update level indicator
+            const levelIndicator = document.getElementById('levelIndicator');
+            levelIndicator.textContent = `Level: ${level.charAt(0).toUpperCase() + level.slice(1)}`;
+            levelIndicator.className = 'level-indicator text-lg ' + level + '-indicator';
+
+            // Start game loop
+            lastCompoundTime = Date.now();
+            lastPowerupTime = Date.now();
+            gameLoop();
+        }
+
+        function showMenu() {
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('levelScreen').classList.remove('hidden');
+            document.getElementById('gameHeader').classList.add('hidden');
+            document.getElementById('gameContainer').classList.add('hidden');
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update game state
+            update();
+
+            // Draw game elements
+            draw();
+
+            // Request next frame
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            const now = Date.now();
+            const deltaTime = 16; // Approximate for 60fps
+
+            // Update game time and score
+            gameTime += deltaTime;
+            time = Math.floor(gameTime / 1000);
+            document.getElementById('score').textContent = score;
+            document.getElementById('time').textContent = time;
+            // Update game time and score
+            gameTime += deltaTime;
+            time = Math.floor(gameTime / 1000);
+            document.getElementById('score').textContent = score;
+            document.getElementById('time').textContent = time;
+
+            // Game over jika waktu sudah mencapai 60 detik
+            if (time >= 60) {
+                gameOver();
+                return; // Hentikan update lebih lanjut
+            }
+            // Increase game speed over time
+            gameSpeed += GAME_SPEED_INCREMENT;
+
+            // Spawn compounds
+            if (now - lastCompoundTime > 2000 - Math.min(gameTime / 100, 800)) {
+                spawnCompound();
+                lastCompoundTime = now;
+            }
+
+            // Spawn powerups
+            if (now - lastPowerupTime > 5000) {
+                spawnPowerup();
+                lastPowerupTime = now;
+            }
+
+            // Update compounds
+            for (let i = compounds.length - 1; i >= 0; i--) {
+                compounds[i].y += gameSpeed;
+
+                // Check collision with player
+                if (checkCollision(player, compounds[i])) {
+                    handleCollision(compounds[i]);
+                    compounds.splice(i, 1);
+                    continue;
+                }
+
+                // Remove if out of bounds
+                if (compounds[i].y > canvas.height) {
+                    compounds.splice(i, 1);
+                }
+            }
+
+            // Update powerups
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                powerups[i].y += gameSpeed;
+
+                // Check collision with player
+                if (checkCollision(player, powerups[i])) {
+                    handlePowerup(powerups[i]);
+                    powerups.splice(i, 1);
+                    continue;
+                }
+
+                // Remove if out of bounds
+                if (powerups[i].y > canvas.height) {
+                    powerups.splice(i, 1);
+                }
+            }
+        }
+
+        function draw() {
+            // Draw background
+            ctx.fillStyle = '#050510';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw lane markers
+            ctx.strokeStyle = 'rgba(0, 247, 255, 0.2)';
+            ctx.lineWidth = 2;
+            for (let i = 1; i < LANE_COUNT; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * LANE_WIDTH, 0);
+                ctx.lineTo(i * LANE_WIDTH, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw compounds
+            compounds.forEach(compound => {
+                ctx.beginPath();
+                ctx.arc(compound.x, compound.y, COMPOUND_SIZE, 0, Math.PI * 2);
+
+                // Set color based on compound type
+                if (compound.type === 'correct') {
+                    ctx.fillStyle = currentLevel === 'alkane' ? '#00ff88' :
+                        currentLevel === 'alkene' ? '#ffcc00' : '#ff00aa';
+                } else {
+                    ctx.fillStyle = '#ff0000';
+                }
+
+                ctx.fill();
+
+                // Draw compound name
+                ctx.fillStyle = 'black';
+                ctx.font = '24x Arial bold';
+                ctx.textAlign = 'center';
+                ctx.fillText(compound.name, compound.x, compound.y + 4);
+            });
+
+            // Draw powerups
+            powerups.forEach(powerup => {
+                ctx.beginPath();
+                ctx.arc(powerup.x, powerup.y, POWERUP_SIZE, 0, Math.PI * 2);
+                ctx.fillStyle = '#00ffff';
+                ctx.fill();
+
+                // Draw powerup name
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial bold';
+                ctx.textAlign = 'center';
+                ctx.fillText(powerup.name, powerup.x, powerup.y + 3);
+            });
+
+            // Draw player
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, PLAYER_SIZE, 0, Math.PI * 2);
+
+            if (player.immune) {
+                // Flash effect when immune
+                ctx.fillStyle = Date.now() % 200 < 100 ? '#ffffff' : '#00f7ff';
+            } else {
+                ctx.fillStyle = '#00f7ff';
+            }
+
+            ctx.fill();
+
+            // Draw player symbol
+            ctx.fillStyle = 'black';
+            ctx.font = '24px Arial bold';
+            ctx.textAlign = 'center';
+            let playerLabel = '';
+            if (currentLevel === 'alkane') playerLabel = 'Alkana';
+            else if (currentLevel === 'alkene') playerLabel = 'Alkene';
+            else if (currentLevel === 'alkyne') playerLabel = 'Alkuna';
+            ctx.fillText(playerLabel, player.x, player.y + 8);
+        }
+
+        function spawnCompound() {
+            const lane = Math.floor(Math.random() * LANE_COUNT);
+            const x = lane * LANE_WIDTH + LANE_WIDTH / 2;
+            const y = -COMPOUND_SIZE;
+
+            // 70% chance for correct compound, 30% for wrong compound
+            if (Math.random() < 0.5) {
+                const correctCompound = compoundTypes[currentLevel].correct[
+                    Math.floor(Math.random() * compoundTypes[currentLevel].correct.length)
+                ];
+                compounds.push({
+                    x: x,
+                    y: y,
+                    width: COMPOUND_SIZE * 2,
+                    height: COMPOUND_SIZE * 2,
+                    type: 'correct',
+                    name: correctCompound.name,
+                    formula: correctCompound.formula,
+                    points: correctCompound.points
+                });
+            } else {
+                const wrongCompound = compoundTypes[currentLevel].wrong[
+                    Math.floor(Math.random() * compoundTypes[currentLevel].wrong.length)
+                ];
+                compounds.push({
+                    x: x,
+                    y: y,
+                    width: COMPOUND_SIZE * 2,
+                    height: COMPOUND_SIZE * 2,
+                    type: 'wrong',
+                    name: wrongCompound.name,
+                    formula: wrongCompound.formula,
+                    points: wrongCompound.points
+                });
+            }
+        }
+
+        function spawnPowerup() {
+            const lane = Math.floor(Math.random() * LANE_COUNT);
+            const x = lane * LANE_WIDTH + LANE_WIDTH / 2;
+            const y = -POWERUP_SIZE;
+
+            const powerupType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+            powerups.push({
+                x: x,
+                y: y,
+                width: POWERUP_SIZE * 2,
+                height: POWERUP_SIZE * 2,
+                type: 'powerup',
+                name: powerupType.name,
+                effect: powerupType.effect,
+                duration: powerupType.duration
+            });
+        }
+
+        function checkCollision(player, object) {
+            const distance = Math.sqrt(
+                Math.pow(player.x - object.x, 2) +
+                Math.pow(player.y - object.y, 2)
+            );
+            return distance < (PLAYER_SIZE + COMPOUND_SIZE);
+        }
+
+        function handleCollision(compound) {
+            if (player.immune) return;
+
+            // Show tooltip with compound info
+            showTooltip(compound);
+
+            // Handle scoring
+            score += player.doublePoints ? compound.points * 2 : compound.points;
+
+            if (compound.type === 'correct') {
+                compoundsCollected++;
+
+                // Add to compounds encountered if not already there
+                if (!compoundsEncountered.some(c => c.name === compound.name)) {
+                    compoundsEncountered.push({
+                        name: compound.name,
+                        formula: compound.formula,
+                        type: 'correct'
+                    });
+                }
+            } else {
+                // Add to compounds encountered if not already there
+                if (!compoundsEncountered.some(c => c.name === compound.name)) {
+                    compoundsEncountered.push({
+                        name: compound.name,
+                        formula: compound.formula,
+                        type: 'wrong'
+                    });
+                }
+
+                // Game over if score goes below 0
+                if (score < 0) {
+                    gameOver();
+                }
+            }
+        }
+
+        function handlePowerup(powerup) {
+            showTooltip(powerup);
+
+            switch (powerup.name) {
+                case 'Catalyst':
+                    // Slow down game speed temporarily
+                    gameSpeed = Math.max(3, gameSpeed * 0.5);
+                    setTimeout(() => {
+                        gameSpeed = GAME_SPEED_START + (gameTime / 1000) * GAME_SPEED_INCREMENT;
+                    }, powerup.duration);
+                    break;
+
+                case 'Shield':
+                    // Temporary immunity
+                    player.immune = true;
+                    setTimeout(() => {
+                        player.immune = false;
+                    }, powerup.duration);
+                    break;
+
+                case 'Double Points':
+                    // Double points temporarily
+                    player.doublePoints = true;
+                    setTimeout(() => {
+                        player.doublePoints = false;
+                    }, powerup.duration);
+                    break;
+            }
+        }
+
+        function showTooltip(object) {
+            const tooltip = document.getElementById('tooltip');
+
+            if (object.type === 'correct' || object.type === 'wrong') {
+                tooltip.textContent = `${object.name} - ${object.formula}`;
+            } else {
+                tooltip.textContent = object.effect;
+            }
+
+            tooltip.style.left = (object.x - 100) + 'px';
+            tooltip.style.top = (object.y - 50) + 'px';
+            tooltip.style.opacity = 1;
+
+            setTimeout(() => {
+                tooltip.style.opacity = 0;
+            }, 2000);
+        }
+
+        function handleKeyPress(e) {
+            if (!gameRunning) return;
+
+            switch (e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    movePlayer(-1);
+                    break;
+
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    movePlayer(1);
+                    break;
+            }
+        }
+
+        function handleTouch(e) {
+            if (!gameRunning) return;
+
+            const touchX = e.touches[0].clientX;
+            const rect = canvas.getBoundingClientRect();
+            const relativeX = touchX - rect.left;
+
+            if (relativeX < canvas.width / 2) {
+                movePlayer(-1);
+            } else {
+                movePlayer(1);
+            }
+        }
+
+        function movePlayer(direction) {
+            player.lane = Math.max(0, Math.min(LANE_COUNT - 1, player.lane + direction));
+            player.x = player.lane * LANE_WIDTH + LANE_WIDTH / 2;
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+
+            // Update game over screen
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalTime').textContent = time + 's';
+            document.getElementById('compoundsCollected').textContent = compoundsCollected;
+
+            // Populate compounds list
+            const compoundsList = document.getElementById('compoundsList');
+            compoundsList.innerHTML = '';
+            compoundsEncountered.forEach(compound => {
+                const div = document.createElement('div');
+                div.className = `mb-1 p-1 border-b border-gray-700 ${compound.type === 'correct' ? 'text-green-400' : 'text-red-400'}`;
+                div.textContent = `${compound.name} - ${compound.formula}`;
+                compoundsList.appendChild(div);
+            });
+
+            // Show game over screen
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+
+        // Start the game when the page loads
+        window.onload = init;
+    </script>
+</body>
+
+</html>

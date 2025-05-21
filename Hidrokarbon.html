@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hydrocarbon Sorter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 90%;
+            max-width: 800px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .score-container,
+        .time-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #score,
+        #timer,
+        #timer-molecule {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        #molecule-display {
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            font-size: 64px;
+            font-weight: bold;
+            position: relative;
+            cursor: grab;
+            user-select: none;
+        }
+
+        #molecule {
+            padding: 20px 40px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            transition: transform 0.2s;
+        }
+
+        #molecule:hover {
+            transform: scale(1.05);
+        }
+
+        #molecule.dragging {
+            opacity: 0.8;
+            transform: scale(1.1);
+        }
+
+        #boxes-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .sorting-box {
+            flex: 1;
+            height: 160px;
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+        }
+
+        .sorting-box h3 {
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+
+        .sorting-box p {
+            font-size: 14px;
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        .sorting-box:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-5px);
+        }
+
+        .sorting-box.highlight {
+            border: 2px dashed #fff;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .sorting-box.correct {
+            background-color: rgba(46, 204, 113, 0.3);
+            border: 2px solid #2ecc71;
+            animation: pulse 0.5s;
+        }
+
+        .sorting-box.incorrect {
+            background-color: rgba(231, 76, 60, 0.3);
+            border: 2px solid #e74c3c;
+            animation: shake 0.5s;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-10px);
+            }
+
+            75% {
+                transform: translateX(10px);
+            }
+        }
+
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            z-index: 100;
+        }
+
+        #game-over h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #f1c40f;
+        }
+
+        #game-over-stats {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        #game-over-stats p {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+
+        #restart-btn {
+            margin-top: 30px;
+            padding: 12px 24px;
+            background-color: #e67e22;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #restart-btn:hover {
+            background-color: #d35400;
+            transform: scale(1.05);
+        }
+
+        .molecule-timer {
+            width: 100%;
+            height: 5px;
+            background-color: rgba(255, 255, 255, 0.2);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .molecule-timer-fill {
+            height: 100%;
+            background-color: #e74c3c;
+            width: 100%;
+            border-radius: 0 0 10px 10px;
+            transition: width 0.1s linear;
+        }
+
+        #instructions {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            z-index: 100;
+        }
+
+        #start-screen h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #f1c40f;
+        }
+
+        #start-screen p {
+            margin: 10px 30px;
+            text-align: center;
+            font-size: 16px;
+            max-width: 600px;
+        }
+
+        #start-btn {
+            margin-top: 30px;
+            padding: 12px 24px;
+            background-color: #2ecc71;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #start-btn:hover {
+            background-color: #27ae60;
+            transform: scale(1.05);
+        }
+
+        .hydrocarbon-info {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .hydrocarbon-info h3 {
+            margin-bottom: 10px;
+            color: #f1c40f;
+        }
+
+        .hydrocarbon-formula {
+            font-weight: bold;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-container">
+        <div id="header">
+            <div class="score-container">
+                <span>SKOR</span>
+                <span id="score">0</span>
+            </div>
+            <div class="time-container">
+                <span>WAKTU</span>
+                <span id="timer">60</span>
+            </div>
+        </div>
+        <!-- Tambahkan di dalam <body>, sebelum <script> -->
+        <audio id="backsound" src="Audio1.mp3" loop></audio>
+        <div id="molecule-display">
+            <div id="molecule">C₂H₆</div>
+            <div class="molecule-timer">
+                <div class="molecule-timer-fill" id="molecule-timer-fill"></div>
+            </div>
+        </div>
+
+        <div id="boxes-container">
+            <div class="sorting-box" data-type="alkana">
+                <h3>ALKANA</h3>
+                <p>CₙH₂ₙ₊₂</p>
+            </div>
+            <div class="sorting-box" data-type="alkena">
+                <h3>ALKENA</h3>
+                <p>CₙH₂ₙ</p>
+            </div>
+            <div class="sorting-box" data-type="alkuna">
+                <h3>ALKUNA</h3>
+                <p>CₙH₂ₙ₋₂</p>
+            </div>
+        </div>
+
+        <div id="instructions">
+            Klik atau seret molekul ke kotak yang tepat!
+        </div>
+
+        <div id="game-over">
+            <h2>PERMAINAN SELESAI</h2>
+            <div id="game-over-stats">
+                <p>Total Skor: <span id="final-score">0</span></p>
+                <p>Akurasi: <span id="accuracy">0%</span></p>
+                <p>Alkana benar: <span id="alkana-correct">0</span></p>
+                <p>Alkena benar: <span id="alkena-correct">0</span></p>
+                <p>Alkuna benar: <span id="alkuna-correct">0</span></p>
+            </div>
+            <button id="restart-btn">MAIN LAGI</button>
+        </div>
+
+        <div id="start-screen">
+            <h2>HYDROCARBON SORTER</h2>
+            <p>Pelajari hidrokarbon dengan cara menyenangkan! Klasifikasikan molekul ke dalam kategori yang tepat:
+                Alkana, Alkena, atau Alkuna.</p>
+
+            <div class="hydrocarbon-info">
+                <h3>Aturan Klasifikasi:</h3>
+                <p><span class="hydrocarbon-formula">Alkana (CₙH₂ₙ₊₂)</span>: Hidrokarbon jenuh dengan ikatan tunggal
+                    C-C</p>
+                <p><span class="hydrocarbon-formula">Alkena (CₙH₂ₙ)</span>: Hidrokarbon dengan minimal satu ikatan
+                    rangkap dua C=C</p>
+                <p><span class="hydrocarbon-formula">Alkuna (CₙH₂ₙ₋₂)</span>: Hidrokarbon dengan minimal satu ikatan
+                    rangkap tiga C≡C</p>
+            </div>
+
+            <p>Waktu bermain: 60 detik. Anda punya 5 detik untuk mengklasifikasikan setiap molekul.</p>
+            <p>Benar: +100 poin | Salah: -50 poin</p>
+
+            <button id="start-btn">MULAI BERMAIN</button>
+        </div>
+    </div>
+
+    <script>
+        // Data molekul hidrokarbon
+        const molecules = [
+            { formula: "CH₄", type: "alkana" },
+            { formula: "C₂H₆", type: "alkana" },
+            { formula: "C₃H₈", type: "alkana" },
+            { formula: "C₄H₁₀", type: "alkana" },
+            { formula: "C₅H₁₂", type: "alkana" },
+            { formula: "C₆H₁₄", type: "alkana" },
+            { formula: "C₇H₁₆", type: "alkana" },
+            { formula: "C₈H₁₈", type: "alkana" },
+            { formula: "C₂H₄", type: "alkena" },
+            { formula: "C₃H₆", type: "alkena" },
+            { formula: "C₄H₈", type: "alkena" },
+            { formula: "C₅H₁₀", type: "alkena" },
+            { formula: "C₆H₁₂", type: "alkena" },
+            { formula: "C₇H₁₄", type: "alkena" },
+            { formula: "C₈H₁₆", type: "alkena" },
+            { formula: "C₂H₂", type: "alkuna" },
+            { formula: "C₃H₄", type: "alkuna" },
+            { formula: "C₄H₆", type: "alkuna" },
+            { formula: "C₅H₈", type: "alkuna" },
+            { formula: "C₆H₁₀", type: "alkuna" },
+            { formula: "C₇H₁₂", type: "alkuna" },
+            { formula: "C₈H₁₄", type: "alkuna" }
+        ];
+
+        // Game variables
+        let score = 0;
+        let gameTimer = 60;
+        let moleculeTimer = 5;
+        let gameInterval;
+        let moleculeInterval;
+        let currentMolecule;
+        let correctAnswers = 0;
+        let totalAnswers = 0;
+        let alkanaCorrect = 0;
+        let alkenaCorrect = 0;
+        let alkunaCorrect = 0;
+        let isMoleculeDragging = false;
+
+        // DOM Elements
+        const scoreElement = document.getElementById('score');
+        const timerElement = document.getElementById('timer');
+        const moleculeElement = document.getElementById('molecule');
+        const moleculeDisplay = document.getElementById('molecule-display');
+        const moleculeTimerFill = document.getElementById('molecule-timer-fill');
+        const sortingBoxes = document.querySelectorAll('.sorting-box');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreElement = document.getElementById('final-score');
+        const accuracyElement = document.getElementById('accuracy');
+        const alkanaCorrectElement = document.getElementById('alkana-correct');
+        const alkenaCorrectElement = document.getElementById('alkena-correct');
+        const alkunaCorrectElement = document.getElementById('alkuna-correct');
+        const restartBtn = document.getElementById('restart-btn');
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+
+        // Initialize game
+        function initGame() {
+            score = 0;
+            gameTimer = 60;
+            correctAnswers = 0;
+            totalAnswers = 0;
+            alkanaCorrect = 0;
+            alkenaCorrect = 0;
+            alkunaCorrect = 0;
+
+            scoreElement.textContent = score;
+            timerElement.textContent = gameTimer;
+
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+
+            // Start game timer
+            gameInterval = setInterval(() => {
+                gameTimer--;
+                timerElement.textContent = gameTimer;
+
+                if (gameTimer <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            // Generate first molecule
+            generateNewMolecule();
+            // ...existing code...
+            // Putar backsound
+            const backsound = document.getElementById('backsound');
+            backsound.volume = 0.3; // Atur volume backsound (0.0 - 1.0)
+            backsound.currentTime = 0;
+            backsound.play();
+            // ...existing code...
+        }
+
+        // Generate a new random molecule
+        function generateNewMolecule() {
+            // Reset molecule timer
+            moleculeTimer = 5;
+            clearInterval(moleculeInterval);
+
+            // Select random molecule
+            currentMolecule = molecules[Math.floor(Math.random() * molecules.length)];
+            moleculeElement.textContent = currentMolecule.formula;
+
+            // Reset molecule animation and timer
+            moleculeTimerFill.style.width = '100%';
+
+            // Start molecule timer
+            moleculeInterval = setInterval(() => {
+                moleculeTimer -= 0.1;
+                let widthPercentage = (moleculeTimer / 5) * 100;
+                moleculeTimerFill.style.width = widthPercentage + '%';
+
+                if (moleculeTimer <= 0) {
+                    handleAnswer(null); // Time's up, wrong answer
+                }
+            }, 100);
+        }
+
+        // Handle player's answer
+        function handleAnswer(selectedType) {
+            clearInterval(moleculeInterval);
+            totalAnswers++;
+
+            let isCorrect = selectedType === currentMolecule.type;
+
+            if (isCorrect) {
+                // Correct answer
+                score += 100;
+                correctAnswers++;
+
+                // Update category-specific counters
+                if (currentMolecule.type === 'alkana') alkanaCorrect++;
+                if (currentMolecule.type === 'alkena') alkenaCorrect++;
+                if (currentMolecule.type === 'alkuna') alkunaCorrect++;
+
+                // Highlight correct box
+                const correctBox = document.querySelector(`.sorting-box[data-type="${currentMolecule.type}"]`);
+                correctBox.classList.add('correct');
+                setTimeout(() => {
+                    correctBox.classList.remove('correct');
+                }, 500);
+            } else {
+                // Wrong answer
+                score -= 50;
+                if (score < 0) score = 0;
+
+                // If a box was selected (not timeout), highlight it as incorrect
+                if (selectedType) {
+                    const incorrectBox = document.querySelector(`.sorting-box[data-type="${selectedType}"]`);
+                    incorrectBox.classList.add('incorrect');
+                    setTimeout(() => {
+                        incorrectBox.classList.remove('incorrect');
+                    }, 500);
+                }
+
+                // Also highlight the correct box
+                const correctBox = document.querySelector(`.sorting-box[data-type="${currentMolecule.type}"]`);
+                correctBox.classList.add('correct');
+                setTimeout(() => {
+                    correctBox.classList.remove('correct');
+                }, 500);
+            }
+
+            // Update score display
+            scoreElement.textContent = score;
+
+            // Generate next molecule after a short delay
+            setTimeout(generateNewMolecule, 800);
+        }
+
+        // End the game
+        function endGame() {
+            clearInterval(gameInterval);
+            clearInterval(moleculeInterval);
+
+            // Calculate final stats
+            const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+
+            // Update game over screen
+            finalScoreElement.textContent = score;
+            accuracyElement.textContent = accuracy + '%';
+            alkanaCorrectElement.textContent = alkanaCorrect;
+            alkenaCorrectElement.textContent = alkenaCorrect;
+            alkunaCorrectElement.textContent = alkunaCorrect;
+
+            // Show game over screen
+            gameOverScreen.style.display = 'flex';
+        }
+
+        // Event listeners for click-based gameplay
+        sortingBoxes.forEach(box => {
+            box.addEventListener('click', () => {
+                if (gameTimer > 0) {
+                    const boxType = box.getAttribute('data-type');
+                    handleAnswer(boxType);
+                }
+            });
+
+            // For drag and drop highlight
+            box.addEventListener('dragenter', (e) => {
+                e.preventDefault();
+                box.classList.add('highlight');
+            });
+
+            box.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                box.classList.add('highlight');
+            });
+
+            box.addEventListener('dragleave', () => {
+                box.classList.remove('highlight');
+            });
+
+            box.addEventListener('drop', (e) => {
+                e.preventDefault();
+                box.classList.remove('highlight');
+                if (gameTimer > 0 && isMoleculeDragging) {
+                    const boxType = box.getAttribute('data-type');
+                    handleAnswer(boxType);
+                    isMoleculeDragging = false;
+                }
+            });
+        });
+
+        // Drag and drop functionality
+        moleculeElement.addEventListener('mousedown', (e) => {
+            isMoleculeDragging = true;
+            moleculeElement.classList.add('dragging');
+
+            // Set the dragged data
+            e.dataTransfer = e.dataTransfer || {};
+            e.dataTransfer.setData('text', 'molecule');
+        });
+
+        moleculeElement.addEventListener('dragstart', (e) => {
+            isMoleculeDragging = true;
+            e.dataTransfer.setData('text', 'molecule');
+        });
+
+        moleculeElement.addEventListener('dragend', () => {
+            isMoleculeDragging = false;
+            moleculeElement.classList.remove('dragging');
+        });
+
+        // Make molecule element draggable
+        moleculeElement.setAttribute('draggable', 'true');
+
+        // Restart game event
+        restartBtn.addEventListener('click', initGame);
+
+        // Start game event
+        startBtn.addEventListener('click', initGame);
+    </script>
+</body>
+
+</html>
