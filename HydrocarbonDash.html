@@ -207,6 +207,11 @@
         <canvas id="gameCanvas" width="800" height="500"></canvas>
         <div id="lane1" class="lane-marker" style="left: 33.33%"></div>
         <div id="lane2" class="lane-marker" style="left: 66.66%"></div>
+        <!-- Kontrol sentuh untuk mobile -->
+        <div id="mobileControls" class="flex justify-between mt-4 px-8" style="display:none;">
+            <button id="btnLeft" class="bg-blue-600 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-800">&#8592;</button>
+            <button id="btnRight" class="bg-blue-600 text-white rounded-full w-16 h-16 text-3xl flex items-center justify-center active:bg-blue-800">&#8594;</button>
+        </div>
     </div>
 
     <div id="tooltip" class="tooltip"></div>
@@ -427,9 +432,27 @@
             // For mobile touch controls
             canvas.addEventListener('touchstart', handleTouch);
 
+            // Tampilkan tombol kontrol jika di mobile
+            if (isMobile()) {
+                document.getElementById('mobileControls').style.display = 'flex';
+                document.getElementById('btnLeft').addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    movePlayer(-1);
+                });
+                document.getElementById('btnRight').addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    movePlayer(1);
+                });
+            }
+
             // Set canvas size based on window
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
+        }
+
+        // Deteksi perangkat mobile
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
         function resizeCanvas() {
